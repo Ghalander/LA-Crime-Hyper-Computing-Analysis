@@ -10,3 +10,9 @@ Hector M
 Katelyn J
 
 Melissa R
+
+### TODO:
+- When attempting to read from the file it may take a while, should use multiple processes to read from file
+- It should collect the data and somehow format it. Json in C? or Arrays and carefully label information by index?
+- Will be using Nearest Neighbor Classification
+- Using labeled crime data with lat-long when presenting a new lat-long, it should be able ot predict a crime of the same nature.
