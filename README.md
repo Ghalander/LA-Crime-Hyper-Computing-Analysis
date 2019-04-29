@@ -16,3 +16,7 @@ Melissa R
 - It should collect the data and somehow format it. Json in C? or Arrays and carefully label information by index?
 - Will be using Nearest Neighbor Classification
 - Using labeled crime data with lat-long when presenting a new lat-long, it should be able ot predict a crime of the same nature.
+
+
+### resources
+- [MPI I/O](http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture32.pdf)
