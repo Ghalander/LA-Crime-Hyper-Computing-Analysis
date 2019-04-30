@@ -20,3 +20,15 @@ Melissa R
 
 ### resources
 - [MPI I/O](http://wgropp.cs.illinois.edu/courses/cs598-s16/lectures/lecture32.pdf)
+1. Read in .csv file
+2. Use MPI to look up different city area ids/names/long-lat/crime 
+3. Predict
+
+### TASKS:
+[Hector] read in .csv file
+
+[ ] Use MPI to look up different city area ids/names/long-lat/crime
+
+[Katelyn] Long-Lat math to determine crime that occurred in that area (function to be called)
+
+[ ] Predict
