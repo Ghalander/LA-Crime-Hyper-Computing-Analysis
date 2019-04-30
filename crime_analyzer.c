@@ -3,6 +3,10 @@
 #include <mpi.h>
 #include <string.h>
 
+// Data count is the number of entries our program should read.
+#define DATA_COUNT 1900000
+#define BUFFER 255
+
 // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
 void storeData(int index, int arrayState, char* word, int* cityId, char** cities, char** crime, float* lats, float* longs) {
     switch (arrayState)
@@ -19,14 +23,29 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
             strcpy(crime[index], word);
             break;
         }
-        case 3: { // lat looks like this "(34.0029, copy over the word after the parenthesis
-            strcpy(word, (word+2));
-            lats[index] = atof(word);
-            break;
-        }
-        case 4: { // longs can look like this -118.2565)" as well. null the word before the parenthesis
-            word[strlen(word)-2] = '\0';
-            longs[index] = atof(word);
+        case 3: { // lat-long will appear like this (34.0256, -118.3248)
+        
+            // printf("Lat of crime is %s\n", word);
+            char first[BUFFER] = "";
+            char second[BUFFER] = "";
+            int cut = 0;
+            for (int i = 1; i < strlen(word)-1; ++i) {
+                if (word[i] == ','){
+                    cut = i;
+                    break;
+                }
+                // printf("word[i] is %c:\n", word[i]);
+                strcat(first, &word[i]);
+            }
+            // strcat(first, '\0');
+            for (int i = cut+2; i < strlen(word)-1; ++i){
+                // printf("word[i] is %c:\n", word[i]);
+                strcat(second, &word[i]);
+            }
+            // strcat(second/, '\0');
+            // strcpy(word, word);
+            lats[index] = atof(first);
+            longs[index] = atof(second);
             break;
         }
         default: printf("No proper state was found\n");
@@ -35,9 +54,6 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
     }
 }
 
-// Data count is the number of entries our program should read.
-#define DATA_COUNT 260000
-#define BUFFER 255
 int main( int argc, char *argv[] )
 {
     int rank, size, range, startEntry, lastEntry;
@@ -54,6 +70,7 @@ int main( int argc, char *argv[] )
     float* latitudes = malloc(DATA_COUNT * sizeof(float));
     float* longitudes = malloc(DATA_COUNT * sizeof(float));
     int avoidFirstLine = -1;
+    int isQuote = -1; // some of the data include quotes with extra commas, we want to ignore those commas
     int linesRead = 0;
     int state = 0; // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
     int index = 0;
@@ -73,6 +90,7 @@ int main( int argc, char *argv[] )
             while ((c = getc(file)) != EOF){
                 if (avoidFirstLine != -1) {
                     if (c == '\n') {
+                        isQuote = -1;
                         commaCount = 0;
                         if (strlen(word)!=0) {
                             // printf("word -> %s\n", word);
@@ -85,13 +103,16 @@ int main( int argc, char *argv[] )
                             break;
                         }
                     }
-                    if (c == ','){ //new comma was found save word
+                    else if (c == ',' && isQuote == -1){ //new comma was found save word
                         commaCount++;
                         if (strlen(word)!=0) {
                             // printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crime, latitudes, longitudes);
                             strcpy(word, "");
                         }
+                    }
+                    else if (c == '\"'){
+                        isQuote *= -1;
                     }
                     else if (commaCount == 4){ // city id
                         state = 0;
@@ -110,7 +131,7 @@ int main( int argc, char *argv[] )
                         strcat(word, &c);
                     }
                     else if (commaCount == 26){ // long
-                        state = 4;
+                        // state = 4;
                         strcat(word, &c);
                     }
                 }
