@@ -2,30 +2,9 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
-// Don't know if we need parallelization to read files, obv incomplete
-// void readFileMPI(){
-    
-//     // open single csv file
-//     MPI_File_open(MPI_COMM_WORLD, "Crime_Data_from_2010_to_Present.csv", MPI_MODE_RDONLY, MPI_INFO_NULL, &mpiFile);
-//     // get size of file -- mpiOffset gets number of bytes
-//     MPI_File_get_size(mpiFile, &mpiOffset);
-//     // range for each processor to read
-//     range = mpiOffset / size;
-//     // entry for each processor to start on
-//     startEntry = range * rank;
-//     // define where to stop reading
-//     if (rank == size-1) {
-//         lastEntry = mpiOffset;
-//     }
-//     else {
-//         lastEntry = startEntry + range;
-//     }
-//     // just printing out line ranges just to check if it worked.
-//     printf("Process: %d, in charge of range = %d to %d\n", rank, startEntry, lastEntry);
-// }
 
 // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
-void storeData(int index, int arrayState, char* word, int* cityId, char (*cities)[255], char (*crime)[255], float* lats, float* longs) {
+void storeData(int index, int arrayState, char* word, int* cityId, char** cities, char** crime, float* lats, float* longs) {
     switch (arrayState)
     {
         case 0: {
@@ -43,13 +22,11 @@ void storeData(int index, int arrayState, char* word, int* cityId, char (*cities
         case 3: { // lat looks like this "(34.0029, copy over the word after the parenthesis
             strcpy(word, (word+2));
             lats[index] = atof(word);
-            printf("new lat: %f\n", lats[index]);
             break;
         }
         case 4: { // longs can look like this -118.2565)" as well. null the word before the parenthesis
             word[strlen(word)-2] = '\0';
             longs[index] = atof(word);
-            printf("new long: %f\n", longs[index]);
             break;
         }
         default: printf("No proper state was found\n");
@@ -59,18 +36,23 @@ void storeData(int index, int arrayState, char* word, int* cityId, char (*cities
 }
 
 // Data count is the number of entries our program should read.
-#define DATA_COUNT 85
+#define DATA_COUNT 260000
+#define BUFFER 255
 int main( int argc, char *argv[] )
 {
     int rank, size, range, startEntry, lastEntry;
     int commaCount = 0;
     char c;
-    char word[255] = "";
-    int cityId[DATA_COUNT];
-    char cities[DATA_COUNT][255]; // 10 strings with max string size of 255
-    float latitudes[DATA_COUNT];
-    float longitudes[DATA_COUNT];
-    char crime[DATA_COUNT][255];
+    char word[BUFFER] = "";
+    int* cityId = malloc(DATA_COUNT * sizeof(int));
+    char** cities = malloc(DATA_COUNT * sizeof(char*));
+    char** crime = malloc(DATA_COUNT * sizeof(char*));
+    for (int i =0; i < DATA_COUNT; i++){
+        cities[i] = malloc((BUFFER+1) * sizeof(char));
+        crime[i] = malloc((BUFFER+1) * sizeof(char));
+    }
+    float* latitudes = malloc(DATA_COUNT * sizeof(float));
+    float* longitudes = malloc(DATA_COUNT * sizeof(float));
     int avoidFirstLine = -1;
     int linesRead = 0;
     int state = 0; // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
@@ -93,13 +75,12 @@ int main( int argc, char *argv[] )
                     if (c == '\n') {
                         commaCount = 0;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            // printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crime, latitudes, longitudes);
                             strcpy(word, "");
                         }
                         index++;
                         linesRead++;
-                        printf("number of lines read: %d\n", linesRead);
                         if (linesRead == DATA_COUNT) {
                             break;
                         }
@@ -107,7 +88,7 @@ int main( int argc, char *argv[] )
                     if (c == ','){ //new comma was found save word
                         commaCount++;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            // printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crime, latitudes, longitudes);
                             strcpy(word, "");
                         }
@@ -143,6 +124,7 @@ int main( int argc, char *argv[] )
 
 // This is just to check if the data matches, comment/remove this later
     for ( int i = 0 ; i < DATA_COUNT; i++ ) {
+        printf("Entry number : %d\n", i);
         printf("City ids are : %d\n", cityId[i]);
         printf("City names are : %s\n", cities[i]);
         printf("The crimes are : %s\n", crime[i]);
