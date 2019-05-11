@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
+#include <math.h>
 
 // Data count is the number of entries our program should read.
-#define DATA_COUNT 1900000
+#define DATA_COUNT 5
 #define BUFFER 255
+#define PI 3.14159265359
+
+float distanceMeasure(float deg_lat1, float deg_long1, float deg_lat2, float deg_long2);
 
 // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
 void storeData(int index, int arrayState, char* word, int* cityId, char** cities, char** crime, float* lats, float* longs) {
@@ -143,6 +147,18 @@ int main( int argc, char *argv[] )
         }
     }
 
+// int training_entries = DATA_COUNT * .8
+// size = total # of threads
+// rank = this thread #
+
+//ranks 1 through size-2 are actually reading file
+//each one needs to get an equal portion of training_entries
+// training_entries / (size - 2)
+//start: (rank - 1) * training_entries / (size - 2)
+//end: ((rank) * training_entries / (size - 2)) - 1
+
+
+
 // This is just to check if the data matches, comment/remove this later
     for ( int i = 0 ; i < DATA_COUNT; i++ ) {
         printf("Entry number : %d\n", i);
@@ -155,3 +171,19 @@ int main( int argc, char *argv[] )
     MPI_Finalize();
     return 0;
 }
+
+float distanceMeasure(float deg_lat1, float deg_long1, float deg_lat2, float deg_long2) {
+	//convert to radians
+	double lat1 = deg_lat1 * PI / 180;
+	double long1 = deg_long1 * PI / 180;
+	double lat2 = deg_lat2 * PI / 180;
+	double long2 = deg_long2 * PI / 180;
+	double lat_diff = lat2 - lat1;
+	double long_diff = long2 - long1;
+	double a = sin(lat_diff/2)*sin(lat_diff/2) + cos(lat1)*cos(lat2)*sin(long_diff/2)*sin(long_diff/2);
+	if(sqrt(a) < 1)
+		return asin(sqrt(a));
+	else
+		return asin(1);
+}
+
