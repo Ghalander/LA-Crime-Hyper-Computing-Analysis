@@ -244,6 +244,7 @@ int main( int argc, char *argv[] )
 
 					tag 14 = send original lat to last rank
 					tag 15 = send original long to last rank
+                    tag 16 = send original crime id to last rank
 				*/
 				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );	
 				MPI_Send( &cityId2, eighty, MPI_INT, r, 1, MPI_COMM_WORLD );	
@@ -257,6 +258,7 @@ int main( int argc, char *argv[] )
 
 				MPI_Send( &latitudeTest, twenty, MPI_FLOAT, size-1, 14, MPI_COMM_WORLD );
 				MPI_Send( &longitudeTest, twenty, MPI_FLOAT, size-1, 15, MPI_COMM_WORLD );
+                MPI_Send( &crimeIdTest, twenty, MPI_INT, size-1, 16, MPI_COMM_WORLD );
 			}
 		}
 
@@ -296,39 +298,49 @@ int main( int argc, char *argv[] )
 		
 
 	}
-	else{
+	else if (rank == size-1){
 
 		//get original test long/lat
 		MPI_Recv( &latitudeTest, twenty, MPI_FLOAT, 0, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv( &longitudeTest, twenty, MPI_FLOAT, 0, 15, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-		printf( "first lat: %f, first long: %f\n", latitudeTest[ 0 ], longitudeTest[ 0 ] );
+        MPI_Recv( &crimeIdTest, twenty, MPI_INT, 0, 16, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		// printf( "first lat: %f, first long: %f\n", latitudeTest[ 0 ], longitudeTest[ 0 ],  );
 
 		float tempCrime, tempLat, tempLong, tempDist;
 		float possibleCrime[ twenty ];
 		float possibleLat[ twenty ];
 		float possibleLong[ twenty ];
-		for( int count = 0; count < twenty; count++ ){
-			for( int counter = 1; counter < size-2; counter++ ){
+		
+			for( int counter = 1; counter < size-1; counter++ ){
+                printf("OUTER counter rank = %d\n", counter);
 				MPI_Recv( &closestCrime, twenty*(size-2), MPI_FLOAT, counter, 10, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 				MPI_Recv( &closestLat, twenty*(size-2), MPI_FLOAT, counter, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 				MPI_Recv( &closestLong, twenty*(size-2), MPI_FLOAT, counter, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 				MPI_Recv( &smallestDistance, twenty*(size-2), MPI_FLOAT, counter, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-				if( counter == 1 ){
-					tempDist = smallestDistance[ count ][ counter-1 ]; 
-					tempCrime = closestCrime[ count ][ counter-1 ];
-					tempLat = closestLat[ count ][ counter-1 ];
-					tempLong = closestLong[ count ][ counter-1 ];
-				}
-				else{
-					if( smallestDistance[ count ][ counter-1 ] < tempDist ){
-						tempDist = smallestDistance[ count ][ counter-1 ]; 
-						tempCrime = closestCrime[ count ][ counter-1 ];
-						tempLat = closestLat[ count ][ counter-1 ];
-						tempLong = closestLong[ count ][ counter-1 ];
-					}
-				}
-			}
-			printf( "Orig Lat: %f, Orig Long: %f, ClosestLat: %f, ClosestLong: %f, PossibleCrime: %f\n", latitudeTest[count], longitudeTest[count], tempLat, tempLong, tempCrime );
+                // making sure the lat and lngs are not zeroed out
+                if ( closestLat[ 0 ][ counter-1 ] != 0.0 && closestLong[ 0 ][ counter-1 ]!= 0.0){
+                    tempDist = smallestDistance[ 0 ][ counter-1 ]; 
+                    tempCrime = closestCrime[ 0 ][ counter-1 ];
+                    tempLat = closestLat[ 0 ][ counter-1 ];
+                    tempLong = closestLong[ 0 ][ counter-1 ];
+                }
+                else{ // setting tempDist to the largest possible value I think is correct
+                    tempDist = 9999.0;
+                    tempCrime =  9999.0;
+                    tempLat = 9999.0;
+                    tempLong = 9999.0;
+                }
+                
+                for( int count = 1; count < twenty; count++ ){
+                        if( smallestDistance[ count ][ counter-1 ] < tempDist && closestLat[ count ][ counter-1 ] != 0.0 && closestLong[ count ][ counter-1 ]!= 0.0){
+                            tempDist = smallestDistance[ count ][ counter-1 ]; 
+                            tempCrime = closestCrime[ count ][ counter-1 ];
+                            tempLat = closestLat[ count ][ counter-1 ];
+                            tempLong = closestLong[ count ][ counter-1 ];
+                        }
+			    }
+                // printing out our predictions
+                printf( "Orig Lat: %f, Orig Long: %f, Orig Crim: %d, ClosestLat: %f, ClosestLong: %f, PossibleCrime: %f\n", latitudeTest[counter], longitudeTest[counter], crimeIdTest[counter], tempLat, tempLong, tempCrime );
 		}
 	}
 
