@@ -6,7 +6,7 @@
 
 // Data count is the number of entries our program should read.
 //#define DATA_COUNT 1900000
-#define DATA_COUNT 1000
+#define DATA_COUNT 10
 #define BUFFER 255
 #define PI 3.14159265359
 
@@ -91,7 +91,11 @@ int main( int argc, char *argv[] )
 	int eighty = DATA_COUNT * 0.8;
 	readCount = eighty / (size-2);
 	remainder = eighty % (size-2);
-	
+	int cityId2[ eighty ];
+	char cities2[ eighty ][ BUFFER ];
+	char crime2[ eighty ][ BUFFER ];
+	float latitude2[ eighty ];
+	float longitude2[ eighty ];
 	/***/
     // let rank 0 process our file
     if(rank == 0){
@@ -155,17 +159,23 @@ int main( int argc, char *argv[] )
             fclose(file);
         }
 /**Katelyn testing**/
+		for( int count = 0; count < eighty; count++ ){
+			cityId2[ count ] = cityId[ count ];
+			strcpy( cities2[ count ], cities[ count ] );
+			strcpy( crime2[ count ], crime[ count ] );
+			latitude2[ count ] = latitudes[ count ];
+			longitude2[ count ] = longitudes[ count ];
+			//printf( "City: %d\n", cityId2[ count ] );
+		}
 		for( int r = 0; r < size; r++ ){
 			int temp = readCount;
 
 			if( r != 0 && r != (size-1 ) ){
 				if( r <= remainder ){
 					temp = readCount + 1;
-					//printf( "Rank: %d, Count: %d\n", r, temp );
 				}
 				else{
 					temp = readCount;
-					//printf( "Rank: %d, Count: %d\n", r, temp );
 				}
 
 				if( r == 1 ){
@@ -178,7 +188,25 @@ int main( int argc, char *argv[] )
 				startEnd[0] = start;
 				startEnd[1] = end;
 				//printf( "Rank: %d, temp: %d, start: %d, end: %d\n", r, temp, start, end );
-				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );			
+
+				/*
+					tag 0 = start/end values
+					tag 1 = cityId
+					tag 2 = city name
+					tag 3 = crime
+					tag 4 = latitude
+					tag 5 = longitude
+
+			cityId2[ count ] = cityId[ count ];
+			strcpy( cities2[ count ], cities[ count ] );
+			strcpy( crime2[ count ], crime[ count ] );
+			latitude2[ count ] = latitudes[ count ];
+			longitude2[ count ] = longitudes[ count ];
+				*/
+				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );	
+				MPI_Send( &cityId2, eighty, MPI_INT, r, 1, MPI_COMM_WORLD );	
+				MPI_Send( &latitude2, eighty, MPI_FLOAT, r, 4, MPI_COMM_WORLD );
+				MPI_Send( &longitude2, eighty, MPI_FLOAT, r, 5, MPI_COMM_WORLD );
 			}
 		}
 /*****/
@@ -186,7 +214,15 @@ int main( int argc, char *argv[] )
     }
 	else if( rank != size-1 ){
 		MPI_Recv( &startEnd, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-		printf( "Rank: %d, start: %d, end: %d\n", rank, startEnd[0], startEnd[1] );
+		//printf( "Rank: %d, start: %d, end: %d\n", rank, startEnd[0], startEnd[1] );
+		MPI_Recv( &cityId2, eighty, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		MPI_Recv( &latitude2, eighty, MPI_FLOAT, 0, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		MPI_Recv( &longitude2, eighty, MPI_FLOAT, 0, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		for( int counter = startEnd[0]; counter <= startEnd[1]; counter++ ){
+			printf( "entry: %d, rank: %d, cityId: %d, latitude: %f, longitude %f\n", counter, rank, cityId2[ counter ], latitude2[ counter ], longitude2[ counter ] );
+		}
+
+
 
 	}
 	else{
