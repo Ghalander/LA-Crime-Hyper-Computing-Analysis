@@ -64,9 +64,20 @@ int main( int argc, char *argv[] )
 {
     int rank, size, range, startEntry, lastEntry;
 	int readCount, remainder, startEnd[2], start=0, end=-1;
+    // Used to tokenize the csv file
     int commaCount = 0;
     char c;
     char word[BUFFER] = "";
+    int avoidFirstLine = -1;
+    int isQuote = -1; // some of the data include quotes with extra commas, we want to ignore those commas
+    int linesRead = 0;
+    int state = 0; // 0  - areadId, 1 - city, 2 - crimeId, 3 - lat, 4 - long
+    int index = 0;
+    
+    // These are the variables to read in the data.
+    // Works with large data values (but malloc is not working properly with MPI)
+    // Found a function called MPI_ALLOC_MEM, did not have enough time to implement
+    // could have possible solved our issue
     int* cityId = malloc(DATA_COUNT * sizeof(int));
     char** cities = malloc(DATA_COUNT * sizeof(char*));
     int* crimeId = malloc(DATA_COUNT * sizeof(int));
@@ -75,11 +86,7 @@ int main( int argc, char *argv[] )
     }
     float* latitudes = malloc(DATA_COUNT * sizeof(float));
     float* longitudes = malloc(DATA_COUNT * sizeof(float));
-    int avoidFirstLine = -1;
-    int isQuote = -1; // some of the data include quotes with extra commas, we want to ignore those commas
-    int linesRead = 0;
-    int state = 0; // 0  - areadId, 1 - city, 2 - crimeId, 3 - lat, 4 - long
-    int index = 0;
+   
     MPI_Init(&argc, &argv);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     MPI_Comm_size( MPI_COMM_WORLD, &size);
@@ -97,6 +104,14 @@ int main( int argc, char *argv[] )
 	float latitude2[ eighty ];
 	float longitude2[ eighty ];
 
+    // used to store values for our testing phase
+    int twenty = DATA_COUNT-eighty;
+    int cityIdTest[ twenty ];
+    char citiesTest[ twenty ][ BUFFER ];
+    int crimeIdTest[ twenty ];
+    float latitudeTest[ twenty ];
+    float longitudeTest[ twenty ];
+
 	float minDistCity[2];
 	/***/
     // let rank 0 process our file
@@ -112,7 +127,7 @@ int main( int argc, char *argv[] )
                         isQuote = -1;
                         commaCount = 0;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            // printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
@@ -125,7 +140,7 @@ int main( int argc, char *argv[] )
                     else if (c == ',' && isQuote == -1){ //new comma was found save word
                         commaCount++;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            // printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
@@ -161,14 +176,28 @@ int main( int argc, char *argv[] )
             fclose(file);
         }
 
+        // This loop is in charge of pulling in 80% of our data count
 		for( int count = 0; count < eighty; count++ ){
 			cityId2[ count ] = cityId[ count ];
-			strcpy( cities2[ count ], cities[ count ] );
+			strcpy( citiesTest[ count ], cities[ count ] );
 			crimeId2[ count ] = crimeId[ count ];
 			latitude2[ count ] = latitudes[ count ];
 			longitude2[ count ] = longitudes[ count ];
 			//printf( "City: %d\n", cityId2[ count ] );
 		}
+
+        //This loop is in charge of pulling in 20% of our data count for testing.
+        int startIndex = 0;
+        for( int count = eighty; count < DATA_COUNT; count++ ){
+			cityIdTest[ startIndex ] = cityId[ count ];
+			strcpy( citiesTest[ startIndex ], cities[ count ] );
+			crimeIdTest[ startIndex ] = crimeId[ count ];
+			latitudeTest[ startIndex ] = latitudes[ count ];
+			longitudeTest[ startIndex ] = longitudes[ count ];
+            startIndex++;
+		}
+        startIndex = 0;
+
 		for( int r = 0; r < size; r++ ){
 			int temp = readCount;
 
