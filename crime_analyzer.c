@@ -1,3 +1,21 @@
+/*
+Project 2 : LA Crime Hyper Computing Analysis
+Date: 5/11/2019
+Hyper Computing Spring 2019.
+Professor Doina Bein
+
+Team Members:
+Katelyn Jiang
+Melissa Riddle
+Hector Medina
+
+Description:
+Using K-NN to predict possible crimes with the closest latitude and longitude
+Algorithm to compute distance of lat/long was a version of Harvesine that worked for our use case.
+CSV file comes from https://data.lacity.org/A-Safe-City/Crime-Data-from-2010-to-Present/y8tr-7khq
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -82,10 +100,6 @@ int main( int argc, char *argv[] )
     MPI_Init(&argc, &argv);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     MPI_Comm_size( MPI_COMM_WORLD, &size);
-    // MPI_File mpiFile;
-    // MPI_Offset mpiOffset;
-
-
 	
 	int eighty = DATA_COUNT * 0.8;
 	readCount = eighty / (size-2);
@@ -111,7 +125,7 @@ int main( int argc, char *argv[] )
 	float closestLong[ twenty ][size-2];
 	float smallestDistance[ twenty ][ size-2 ];
 	
-    // let rank 0 process our file
+    // let rank 0 process our csv file
     if(rank == 0){
         FILE *file;
         file = fopen("Crime_Data_from_2010_to_Present.csv", "r");
@@ -180,7 +194,6 @@ int main( int argc, char *argv[] )
 			crimeId2[ count ] = crimeId[ count ];
 			latitude2[ count ] = latitudes[ count ];
 			longitude2[ count ] = longitudes[ count ];
-			//printf( "City: %d\n", cityId2[ count ] );
 		}
 
         //This loop is in charge of pulling in 20% of our data count for testing.
@@ -276,7 +289,7 @@ int main( int argc, char *argv[] )
 		MPI_Recv( &longitudeTest, twenty, MPI_FLOAT, 0, 9, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
 		float mindist;
-		//initialize the first minimum distance
+		//initialize the first minimum distance of the test data with the training data
 		for( int count = 0; count < twenty; count++ ){
 			mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], latitudeTest[ count ], longitudeTest[ count ] );
 				for( int counter = startEnd[0]+1; counter <= startEnd[1]; counter++ ){
@@ -291,6 +304,7 @@ int main( int argc, char *argv[] )
 			}
 		}
 
+        // Sending our possible closest values from our test data
 		MPI_Send( &closestCrime, twenty*(size-2), MPI_FLOAT, size-1, 10, MPI_COMM_WORLD );
 		MPI_Send( &closestLat, twenty*(size-2), MPI_FLOAT, size-1, 11, MPI_COMM_WORLD );
 		MPI_Send( &closestLong, twenty*(size-2), MPI_FLOAT, size-1, 12, MPI_COMM_WORLD );
@@ -326,12 +340,13 @@ int main( int argc, char *argv[] )
                 }
                 else{ // setting tempDist to the largest possible value I think is correct
                     tempDist = 9999.0;
-                    tempCrime =  9999.0;
+                    tempCrime = 9999.0;
                     tempLat = 9999.0;
                     tempLong = 9999.0;
                 }
-                
+                // checks the smallest distance of the results of the test data with the possible predicted crime
                 for( int count = 1; count < twenty; count++ ){
+                        // making sure the lat and lngs are not zeroed out
                         if( smallestDistance[ count ][ counter-1 ] < tempDist && closestLat[ count ][ counter-1 ] != 0.0 && closestLong[ count ][ counter-1 ]!= 0.0){
                             tempDist = smallestDistance[ count ][ counter-1 ]; 
                             tempCrime = closestCrime[ count ][ counter-1 ];
@@ -348,6 +363,7 @@ int main( int argc, char *argv[] )
     return 0;
 }
 
+// Using Haversine algorithm to compute the the distance of latitude and longitude
 float distanceMeasure(float deg_lat1, float deg_long1, float deg_lat2, float deg_long2) {
 	//convert to radians
 	double lat1 = deg_lat1 * PI / 180;
