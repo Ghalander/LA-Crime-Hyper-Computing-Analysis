@@ -255,6 +255,9 @@ int main( int argc, char *argv[] )
 				MPI_Send( &crimeIdTest, twenty, MPI_INT, r, 7, MPI_COMM_WORLD );
 				MPI_Send( &latitudeTest, twenty, MPI_FLOAT, r, 8, MPI_COMM_WORLD );
 				MPI_Send( &longitudeTest, twenty, MPI_FLOAT, r, 9, MPI_COMM_WORLD );
+
+				MPI_Send( &latitudeTest, twenty, MPI_FLOAT, size-1, 14, MPI_COMM_WORLD );
+				MPI_Send( &longitudeTest, twenty, MPI_FLOAT, size-1, 15, MPI_COMM_WORLD );
 			}
 		}
 
@@ -296,6 +299,11 @@ int main( int argc, char *argv[] )
 	}
 	else{
 
+		//get original test long/lat
+		MPI_Recv( &latitudeTest, twenty, MPI_FLOAT, 0, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv( &longitudeTest, twenty, MPI_FLOAT, 0, 15, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		printf( "first lat: %f, first long: %f\n", latitudeTest[ 0 ], longitudeTest[ 0 ] );
+
 		float tempCrime, tempLat, tempLong, tempDist;
 		float possibleCrime[ twenty ];
 		float possibleLat[ twenty ];
@@ -321,7 +329,7 @@ int main( int argc, char *argv[] )
 					}
 				}
 			}
-			printf( "ClosestLat: %f, ClosestLong: %f, PossibleCrime: %f\n", tempLat, tempLong, tempCrime );
+			printf( "Orig Lat: %f, Orig Long: %f, ClosestLat: %f, ClosestLong: %f, PossibleCrime: %f\n", latitudeTest[count], longitudeTest[count], tempLat, tempLong, tempCrime );
 		}
 	}
 
