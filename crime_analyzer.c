@@ -5,7 +5,7 @@ Hyper Computing Spring 2019.
 Professor Doina Bein
 
 Team Members:
-Katelyn Jiang
+Katelyn Jaing
 Melissa Riddle
 Hector Medina
 
