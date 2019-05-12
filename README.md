@@ -27,7 +27,7 @@ Melissa R
 ### TASKS:
 [Hector] read in .csv file
 
-[ ] Use MPI to look up different city area ids/names/long-lat/crime
+[Katelyn] Use MPI to look up different city area ids/names/long-lat/crime
 
 [Melissa] Long-Lat math to determine crime that occurred in that area (function to be called)
 
