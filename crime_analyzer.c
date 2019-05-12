@@ -87,7 +87,7 @@ int main( int argc, char *argv[] )
     // MPI_Offset mpiOffset;
 
 
-	/**katelyn testing**/
+	
 	int eighty = DATA_COUNT * 0.8;
 	readCount = eighty / (size-2);
 	remainder = eighty % (size-2);
@@ -98,7 +98,7 @@ int main( int argc, char *argv[] )
 	float longitude2[ eighty ];
 
 	float minDistCity[2];
-	/***/
+	
     // let rank 0 process our file
     if(rank == 0){
         FILE *file;
@@ -217,14 +217,14 @@ int main( int argc, char *argv[] )
 		MPI_Recv( &longitude2, eighty, MPI_FLOAT, 0, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
 		int cityForMin = cityId2[ startEnd[0] ];
-		float mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], 34, -118  );
+		float mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], -118, 34 );
 		minDistCity[0] = mindist;
 		minDistCity[1] = cityId2[ startEnd[0] ];	
 	
 		for( int counter = startEnd[0]+1; counter <= startEnd[1]; counter++ ){
 			//printf( "entry: %d, rank: %d, cityId: %d, latitude: %f, longitude %f\n", counter, rank, cityId2[ counter ], latitude2[ counter ], longitude2[ counter ] );
 
-			float temp = distanceMeasure( latitude2[ counter ], longitude2[ counter ], 34, -118  );
+			float temp = distanceMeasure( latitude2[ counter ], longitude2[ counter ], -118, 34  );
 			if( temp < mindist ){
 				mindist = temp;
 				minDistCity[0] = mindist;
