@@ -29,6 +29,6 @@ Melissa R
 
 [ ] Use MPI to look up different city area ids/names/long-lat/crime
 
-[Katelyn] Long-Lat math to determine crime that occurred in that area (function to be called)
+[Melissa] Long-Lat math to determine crime that occurred in that area (function to be called)
 
 [ ] Predict

@@ -5,7 +5,8 @@
 #include <math.h>
 
 // Data count is the number of entries our program should read.
-#define DATA_COUNT 5
+//#define DATA_COUNT 1900000
+#define DATA_COUNT 1000
 #define BUFFER 255
 #define PI 3.14159265359
 
@@ -61,6 +62,7 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
 int main( int argc, char *argv[] )
 {
     int rank, size, range, startEntry, lastEntry;
+	int readCount, remainder, startEnd[2], start=0, end=-1;
     int commaCount = 0;
     char c;
     char word[BUFFER] = "";
@@ -84,6 +86,13 @@ int main( int argc, char *argv[] )
     // MPI_File mpiFile;
     // MPI_Offset mpiOffset;
 
+
+	/**katelyn testing**/
+	int eighty = DATA_COUNT * 0.8;
+	readCount = eighty / (size-2);
+	remainder = eighty % (size-2);
+	
+	/***/
     // let rank 0 process our file
     if(rank == 0){
         FILE *file;
@@ -145,22 +154,47 @@ int main( int argc, char *argv[] )
             }
             fclose(file);
         }
+/**Katelyn testing**/
+		for( int r = 0; r < size; r++ ){
+			int temp = readCount;
+
+			if( r != 0 && r != (size-1 ) ){
+				if( r <= remainder ){
+					temp = readCount + 1;
+					//printf( "Rank: %d, Count: %d\n", r, temp );
+				}
+				else{
+					temp = readCount;
+					//printf( "Rank: %d, Count: %d\n", r, temp );
+				}
+
+				if( r == 1 ){
+					start = 0;
+				}
+				else {
+					start = end + 1;
+				}
+				end += temp;
+				startEnd[0] = start;
+				startEnd[1] = end;
+				//printf( "Rank: %d, temp: %d, start: %d, end: %d\n", r, temp, start, end );
+				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );			
+			}
+		}
+/*****/
+
     }
+	else if( rank != size-1 ){
+		MPI_Recv( &startEnd, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		printf( "Rank: %d, start: %d, end: %d\n", rank, startEnd[0], startEnd[1] );
 
-// int training_entries = DATA_COUNT * .8
-// size = total # of threads
-// rank = this thread #
-
-//ranks 1 through size-2 are actually reading file
-//each one needs to get an equal portion of training_entries
-// training_entries / (size - 2)
-//start: (rank - 1) * training_entries / (size - 2)
-//end: ((rank) * training_entries / (size - 2)) - 1
-
-
+	}
+	else{
+		printf( "I AM %d\n", size-1 );
+	}
 
 // This is just to check if the data matches, comment/remove this later
-    for ( int i = 0 ; i < DATA_COUNT; i++ ) {
+/*    for ( int i = 0 ; i < DATA_COUNT; i++ ) {
         printf("Entry number : %d\n", i);
         printf("City ids are : %d\n", cityId[i]);
         printf("City names are : %s\n", cities[i]);
@@ -168,6 +202,7 @@ int main( int argc, char *argv[] )
         printf("The Lats are : %f\n", latitudes[i]);
         printf("The Longs are : %f\n\n", longitudes[i]);
     }
+*/
     MPI_Finalize();
     return 0;
 }
