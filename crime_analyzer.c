@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
     // let rank 0 process our file
     if(rank == 0){
         FILE *file;
-        file = fopen("crimeId_Data_from_2010_to_Present.csv", "r");
+        file = fopen("Crime_Data_from_2010_to_Present.csv", "r");
         // we want  city name, city name id, long/lat, and the crimeId occuring
         // going to ignore first line of the file
         if (file) {
