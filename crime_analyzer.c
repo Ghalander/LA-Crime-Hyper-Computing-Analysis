@@ -97,7 +97,7 @@ int main( int argc, char *argv[] )
 	float latitude2[ eighty ];
 	float longitude2[ eighty ];
 
-	float minDistCity[2];
+	float minDistCity[3];
 	
     // let rank 0 process our file
     if(rank == 0){
@@ -112,7 +112,7 @@ int main( int argc, char *argv[] )
                         isQuote = -1;
                         commaCount = 0;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            //printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
@@ -125,7 +125,7 @@ int main( int argc, char *argv[] )
                     else if (c == ',' && isQuote == -1){ //new comma was found save word
                         commaCount++;
                         if (strlen(word)!=0) {
-                            printf("word -> %s\n", word);
+                            //printf("word -> %s\n", word);
                             storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
@@ -201,7 +201,7 @@ int main( int argc, char *argv[] )
 				*/
 				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );	
 				MPI_Send( &cityId2, eighty, MPI_INT, r, 1, MPI_COMM_WORLD );	
-				//MPI_Send( &cities2[0][0], eighty*BUFFER, MPI_CHAR, r, 2, MPI_COMM_WORLD );	
+				MPI_Send( &crimeId2, eighty, MPI_INT, r, 3, MPI_COMM_WORLD );	
 				MPI_Send( &latitude2, eighty, MPI_FLOAT, r, 4, MPI_COMM_WORLD );
 				MPI_Send( &longitude2, eighty, MPI_FLOAT, r, 5, MPI_COMM_WORLD );
 			}
@@ -212,47 +212,51 @@ int main( int argc, char *argv[] )
 		MPI_Recv( &startEnd, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 		//printf( "Rank: %d, start: %d, end: %d\n", rank, startEnd[0], startEnd[1] );
 		MPI_Recv( &cityId2, eighty, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-		//MPI_Recv( &cities2[0][0], eighty*BUFFER, MPI_CHAR, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+		MPI_Recv( &crimeId2, eighty, MPI_INT, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 		MPI_Recv( &latitude2, eighty, MPI_FLOAT, 0, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 		MPI_Recv( &longitude2, eighty, MPI_FLOAT, 0, 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
 		int cityForMin = cityId2[ startEnd[0] ];
-		float mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], -118, 34 );
+		float mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], 34, -118 );
 		minDistCity[0] = mindist;
-		minDistCity[1] = cityId2[ startEnd[0] ];	
+		minDistCity[1] = cityId2[ startEnd[0] ];
+		minDistCity[2] = crimeId2[ startEnd[0] ];	
 	
 		for( int counter = startEnd[0]+1; counter <= startEnd[1]; counter++ ){
 			//printf( "entry: %d, rank: %d, cityId: %d, latitude: %f, longitude %f\n", counter, rank, cityId2[ counter ], latitude2[ counter ], longitude2[ counter ] );
 
-			float temp = distanceMeasure( latitude2[ counter ], longitude2[ counter ], -118, 34  );
+			float temp = distanceMeasure( latitude2[ counter ], longitude2[ counter ], 34, -118  );
 			if( temp < mindist ){
 				mindist = temp;
 				minDistCity[0] = mindist;
 				minDistCity[1] = cityId2[ counter ];
+				minDistCity[2] = crimeId2[ counter ];
 			}	//float minDistCity[2];
 		
 		}
 		//printf( "mindist: %f, cityId: %f, rank: %d\n", minDistCity[0], minDistCity[1], rank );
 
-		MPI_Send( &minDistCity, 2, MPI_FLOAT, size-1, 6, MPI_COMM_WORLD );
+		MPI_Send( &minDistCity, 3, MPI_FLOAT, size-1, 6, MPI_COMM_WORLD );
 
 	}
 	else{
-		float temp, city;
+		float temp, city, crime;
 		for( int r = 1; r < size-2; r++ ){
-			MPI_Recv( &minDistCity, 2, MPI_FLOAT, r, 6, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+			MPI_Recv( &minDistCity, 3, MPI_FLOAT, r, 6, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 			if( r == 1 ){
 				temp = minDistCity[0];
 				city = minDistCity[1];
+				crime = minDistCity[2];
 			}
 			else{
 				if( minDistCity[0]<temp ){
 					temp = minDistCity[0];
 					city = minDistCity[1];
+					crime = minDistCity[2];
 				}
 			}
 		}
-		printf( "smallest: %f, city: %f\n", temp, city);
+		printf( "smallest: %f, city: %f, crime: %f\n", temp, city, crime);
 	}
 
 // This is just to check if the data matches, comment/remove this later
