@@ -12,8 +12,8 @@
 
 float distanceMeasure(float deg_lat1, float deg_long1, float deg_lat2, float deg_long2);
 
-// 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
-void storeData(int index, int arrayState, char* word, int* cityId, char** cities, char** crime, float* lats, float* longs) {
+// 0  - areadId, 1 - city, 2 - crimeId, 3 - lat, 4 - long
+void storeData(int index, int arrayState, char* word, int* cityId, char** cities, int* crimeId, float* lats, float* longs) {
     switch (arrayState)
     {
         case 0: {
@@ -25,12 +25,13 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
             break;
         }
         case 2: {
-            strcpy(crime[index], word);
+            crimeId[index] = atoi(word);
+            // strcpy(crimeId[index], word);
             break;
         }
         case 3: { // lat-long will appear like this (34.0256, -118.3248)
         
-            // printf("Lat of crime is %s\n", word);
+            // printf("Lat of crimeId is %s\n", word);
             char first[BUFFER] = "";
             char second[BUFFER] = "";
             int cut = 0;
@@ -68,17 +69,16 @@ int main( int argc, char *argv[] )
     char word[BUFFER] = "";
     int* cityId = malloc(DATA_COUNT * sizeof(int));
     char** cities = malloc(DATA_COUNT * sizeof(char*));
-    char** crime = malloc(DATA_COUNT * sizeof(char*));
+    int* crimeId = malloc(DATA_COUNT * sizeof(int));
     for (int i =0; i < DATA_COUNT; i++){
         cities[i] = malloc((BUFFER+1) * sizeof(char));
-        crime[i] = malloc((BUFFER+1) * sizeof(char));
     }
     float* latitudes = malloc(DATA_COUNT * sizeof(float));
     float* longitudes = malloc(DATA_COUNT * sizeof(float));
     int avoidFirstLine = -1;
     int isQuote = -1; // some of the data include quotes with extra commas, we want to ignore those commas
     int linesRead = 0;
-    int state = 0; // 0  - areadId, 1 - city, 2 - crime, 3 - lat, 4 - long
+    int state = 0; // 0  - areadId, 1 - city, 2 - crimeId, 3 - lat, 4 - long
     int index = 0;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
@@ -93,7 +93,7 @@ int main( int argc, char *argv[] )
 	remainder = eighty % (size-2);
 	int cityId2[ eighty ];
 	char cities2[ eighty ][ BUFFER ];
-	char crime2[ eighty ][ BUFFER ];
+	int crimeId2[ eighty ];
 	float latitude2[ eighty ];
 	float longitude2[ eighty ];
 
@@ -103,7 +103,7 @@ int main( int argc, char *argv[] )
     if(rank == 0){
         FILE *file;
         file = fopen("Crime_Data_from_2010_to_Present.csv", "r");
-        // we want  city name, city name id, long/lat, and the crime occuring
+        // we want  city name, city name id, long/lat, and the crimeId occuring
         // going to ignore first line of the file
         if (file) {
             while ((c = getc(file)) != EOF){
@@ -112,8 +112,8 @@ int main( int argc, char *argv[] )
                         isQuote = -1;
                         commaCount = 0;
                         if (strlen(word)!=0) {
-                            // printf("word -> %s\n", word);
-                            storeData(index, state, word, cityId, cities, crime, latitudes, longitudes);
+                            printf("word -> %s\n", word);
+                            storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
                         index++;
@@ -125,8 +125,8 @@ int main( int argc, char *argv[] )
                     else if (c == ',' && isQuote == -1){ //new comma was found save word
                         commaCount++;
                         if (strlen(word)!=0) {
-                            // printf("word -> %s\n", word);
-                            storeData(index, state, word, cityId, cities, crime, latitudes, longitudes);
+                            printf("word -> %s\n", word);
+                            storeData(index, state, word, cityId, cities, crimeId, latitudes, longitudes);
                             strcpy(word, "");
                         }
                     }
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
                         state = 1;
                         strcat(word, &c);
                     }
-                    else if (commaCount == 8){ // crime name
+                    else if (commaCount == 7){ // crimeId name
                         state = 2;
                         strcat(word, &c);
                     }
@@ -164,7 +164,7 @@ int main( int argc, char *argv[] )
 		for( int count = 0; count < eighty; count++ ){
 			cityId2[ count ] = cityId[ count ];
 			strcpy( cities2[ count ], cities[ count ] );
-			strcpy( crime2[ count ], crime[ count ] );
+			crimeId2[ count ] = crimeId[ count ];
 			latitude2[ count ] = latitudes[ count ];
 			longitude2[ count ] = longitudes[ count ];
 			//printf( "City: %d\n", cityId2[ count ] );
@@ -195,7 +195,7 @@ int main( int argc, char *argv[] )
 					tag 0 = start/end values
 					tag 1 = cityId
 					tag 2 = city name
-					tag 3 = crime
+					tag 3 = crimeId
 					tag 4 = latitude
 					tag 5 = longitude
 				*/
@@ -260,7 +260,7 @@ int main( int argc, char *argv[] )
         printf("Entry number : %d\n", i);
         printf("City ids are : %d\n", cityId[i]);
         printf("City names are : %s\n", cities[i]);
-        printf("The crimes are : %s\n", crime[i]);
+        printf("The crimeIds are : %s\n", crimeId[i]);
         printf("The Lats are : %f\n", latitudes[i]);
         printf("The Longs are : %f\n\n", longitudes[i]);
     }
