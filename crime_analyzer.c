@@ -242,6 +242,9 @@ int main( int argc, char *argv[] )
 					tag 11 = send closestLat to last rank
 					tag 12 = send closestLong to last rank
 					tag 13 = send the samllest distances to last rank
+
+					tag 14 = send original lat to last rank
+					tag 15 = send original long to last rank
 				*/
 				MPI_Send( &startEnd, 2, MPI_INT, r, 0, MPI_COMM_WORLD );	
 				MPI_Send( &cityId2, eighty, MPI_INT, r, 1, MPI_COMM_WORLD );	
@@ -268,17 +271,6 @@ int main( int argc, char *argv[] )
 		MPI_Recv( &latitudeTest, twenty, MPI_FLOAT, 0, 8, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 		MPI_Recv( &longitudeTest, twenty, MPI_FLOAT, 0, 9, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
-/*
-		int cityForMin = cityId2[ startEnd[0] ];
-		float mindist = distanceMeasure( latitude2[ startEnd[0] ], longitude2[ startEnd[0] ], 34, -118 );
-		minDistCity[0] = mindist;
-		minDistCity[1] = cityId2[ startEnd[0] ];
-		minDistCity[2] = crimeId2[ startEnd[0] ];	
-
-	float closestCrime[ twenty ][size-2];
-	float closestLat[ twenty ][size-2];
-	float closestLong[ twenty ][size-2];
-*/
 		float mindist;
 		//initialize the first minimum distance
 		for( int count = 0; count < twenty; count++ ){
@@ -291,25 +283,10 @@ int main( int argc, char *argv[] )
 						closestLat[count][rank-1] = latitude2[ counter ];
 						closestLong[count][rank-1] = longitude2[ counter ];
 						smallestDistance[count][rank-1] = mindist;
-					}	//float minDistCity[2];
+					}	
 			}
 		}
 
-/*		for( int counter = startEnd[0]+1; counter <= startEnd[1]; counter++ ){
-			//printf( "entry: %d, rank: %d, cityId: %d, latitude: %f, longitude %f\n", counter, rank, cityId2[ counter ], latitude2[ counter ], longitude2[ counter ] );
-
-			float temp = distanceMeasure( latitude2[ counter ], longitude2[ counter ], 34, -118  );
-			if( temp < mindist ){
-				mindist = temp;
-				minDistCity[0] = mindist;
-				minDistCity[1] = cityId2[ counter ];
-				minDistCity[2] = crimeId2[ counter ];
-			}	//float minDistCity[2];
-
-		}*/
-		//printf( "mindist: %f, cityId: %f, rank: %d\n", minDistCity[0], minDistCity[1], rank );
-
-		//MPI_Send( &minDistCity, 3, MPI_FLOAT, size-1, 6, MPI_COMM_WORLD );	
 		MPI_Send( &closestCrime, twenty*(size-2), MPI_FLOAT, size-1, 10, MPI_COMM_WORLD );
 		MPI_Send( &closestLat, twenty*(size-2), MPI_FLOAT, size-1, 11, MPI_COMM_WORLD );
 		MPI_Send( &closestLong, twenty*(size-2), MPI_FLOAT, size-1, 12, MPI_COMM_WORLD );
@@ -318,26 +295,6 @@ int main( int argc, char *argv[] )
 
 	}
 	else{
-	/*
-		float temp, city, crime;
-		for( int r = 1; r < size-2; r++ ){
-			MPI_Recv( &minDistCity, 3, MPI_FLOAT, r, 6, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-			if( r == 1 ){
-				temp = minDistCity[0];
-				city = minDistCity[1];
-				crime = minDistCity[2];
-			}
-			else{
-				if( minDistCity[0]<temp ){
-					temp = minDistCity[0];
-					city = minDistCity[1];
-					crime = minDistCity[2];
-				}
-			}
-		}
-		printf( "smallest: %f, city: %f, crime: %f\n", temp, city, crime);
-
-	*/
 
 		float tempCrime, tempLat, tempLong, tempDist;
 		float possibleCrime[ twenty ];
@@ -368,16 +325,6 @@ int main( int argc, char *argv[] )
 		}
 	}
 
-// This is just to check if the data matches, comment/remove this later
-/*    for ( int i = 0 ; i < DATA_COUNT; i++ ) {
-        printf("Entry number : %d\n", i);
-        printf("City ids are : %d\n", cityId[i]);
-        printf("City names are : %s\n", cities[i]);
-        printf("The crimeIds are : %s\n", crimeId[i]);
-        printf("The Lats are : %f\n", latitudes[i]);
-        printf("The Longs are : %f\n\n", longitudes[i]);
-    }
-*/
     MPI_Finalize();
     return 0;
 }
