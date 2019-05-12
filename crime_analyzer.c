@@ -26,12 +26,9 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
         }
         case 2: {
             crimeId[index] = atoi(word);
-            // strcpy(crimeId[index], word);
             break;
         }
         case 3: { // lat-long will appear like this (34.0256, -118.3248)
-        
-            // printf("Lat of crimeId is %s\n", word);
             char first[BUFFER] = "";
             char second[BUFFER] = "";
             int cut = 0;
@@ -40,16 +37,11 @@ void storeData(int index, int arrayState, char* word, int* cityId, char** cities
                     cut = i;
                     break;
                 }
-                // printf("word[i] is %c:\n", word[i]);
                 strcat(first, &word[i]);
             }
-            // strcat(first, '\0');
             for (int i = cut+2; i < strlen(word)-1; ++i){
-                // printf("word[i] is %c:\n", word[i]);
                 strcat(second, &word[i]);
             }
-            // strcat(second/, '\0');
-            // strcpy(word, word);
             lats[index] = atof(first);
             longs[index] = atof(second);
             break;
@@ -202,6 +194,13 @@ int main( int argc, char *argv[] )
             startIndex++;
 		}
         startIndex = 0;
+
+        // freeing our variables after transferring it.
+        free(cityId);
+        free(crimeId);
+        free(cities);
+        free(latitudes);
+        free(longitudes);
 
 		for( int r = 0; r < size; r++ ){
 			int temp = readCount;
